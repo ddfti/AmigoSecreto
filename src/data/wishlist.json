@@ -30,13 +30,13 @@
     },
     {
       "id": "gift-item-04",
-      "title": "Fone Over-Ear Sem Fio Minimalista",
-      "storeName": "Mercado Livre",
-      "category": "Áudio",
-      "productUrl": "https://lista.mercadolivre.com.br/fone-bluetooth-over-ear",
-      "imageUrl": "/src/assets/images/gift_wireless_headphones_1794964313214.jpg",
-      "price": 29.9,
-      "note": "Preferência por tons claros, areia ou alumínio escovado."
+      "title": "Smart Bluetooth Pisca 100leds 10m Natal",
+      "storeName": "Amazon",
+      "category": "Casa",
+      "productUrl": "https://www.amazon.com.br/Tramontina-L%C3%A2mpada-Inteligente-Compat%C3%ADvel-Bluetooth/dp/B09HXWRWB4?pd_rd_w=jjkmz&content-id=amzn1.sym.92c4b61b-24ef-4d1d-a664-9aa20f063609&pf_rd_p=92c4b61b-24ef-4d1d-a664-9aa20f063609&pf_rd_r=XC1XYRXRDEYVSFQBH2PE&pd_rd_wg=1ijic&pd_rd_r=34a5dec6-a0b7-4d7f-8526-441a49a3da7c&pd_rd_i=B09HXWRWB4&ref_=dossier_default_ref_B09HXWRWB4",
+      "imageUrl": "https://m.media-amazon.com/images/I/71OEfkTletL._AC_SL1200_.jpg",
+      "price": 23.9,
+      "note": "Controle 6 Funções"
     },
     {
       "id": "gift-book-03",
