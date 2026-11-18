@@ -2,10 +2,11 @@ import React from 'react';
 
 interface NavbarProps {
   brandTitle: string;
+  isEditable: boolean;
   onOpenManage: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ brandTitle, onOpenManage }) => {
+export const Navbar: React.FC<NavbarProps> = ({ brandTitle, isEditable, onOpenManage }) => {
   return (
     <header className="sticky top-0 z-30 bg-canvas/95 backdrop-blur-sm border-b border-border-hairline">
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between gap-8">
@@ -41,13 +42,22 @@ export const Navbar: React.FC<NavbarProps> = ({ brandTitle, onOpenManage }) => {
         </nav>
 
         <div className="flex items-center shrink-0">
-          <button
-            type="button"
-            onClick={onOpenManage}
-            className="px-4 py-2 text-xs font-semibold tracking-wide text-white bg-forest hover:bg-forest-hover rounded-md transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-          >
-            Gerenciar Lista
-          </button>
+          {isEditable ? (
+            <button
+              type="button"
+              onClick={onOpenManage}
+              className="px-4 py-2 text-xs font-semibold tracking-wide text-white bg-forest hover:bg-forest-hover rounded-md transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+            >
+              Gerenciar Lista
+            </button>
+          ) : (
+            <a
+              href="#sugestoes"
+              className="px-4 py-2 text-xs font-semibold tracking-wide text-white bg-forest hover:bg-forest-hover rounded-md transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+            >
+              Ver sugestões
+            </a>
+          )}
         </div>
       </div>
     </header>

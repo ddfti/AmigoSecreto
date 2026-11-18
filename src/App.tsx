@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, Download } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import publishedWishlistRaw from './data/wishlist.json';
 import type { GiftItem, WishlistConfig, WishlistData } from './types/wishlist';
 import { Navbar } from './components/Navbar';
@@ -13,44 +13,62 @@ import { GiftCard } from './components/GiftCard';
 import { HowItWorksSection } from './components/HowItWorksSection';
 import { ManageDrawer } from './components/ManageDrawer';
 
-const STORAGE_KEY = 'amigo_secreto_wishlist_v1';
-
-const publishedData: WishlistData = publishedWishlistRaw as WishlistData;
-
-function loadInitialWishlist(): WishlistData {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return publishedData;
-    const parsed = JSON.parse(saved) as WishlistData;
-    if (parsed && parsed.config && Array.isArray(parsed.items)) {
-      return parsed;
-    }
-    return publishedData;
-  } catch {
-    return publishedData;
-  }
-}
+const IS_EDITABLE = import.meta.env.DEV;
+const initialData: WishlistData = publishedWishlistRaw as WishlistData;
 
 export default function App() {
-  const [data, setData] = useState<WishlistData>(loadInitialWishlist);
+  const [data, setData] = useState<WishlistData>(initialData);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const hasUnsavedChanges = useMemo(() => {
-    return JSON.stringify(data) !== JSON.stringify(publishedData);
-  }, [data]);
-
   useEffect(() => {
+    if (!IS_EDITABLE) return;
+    let active = true;
+    fetch('/__api/wishlist', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((fresh: WishlistData | null) => {
+        if (active && fresh && fresh.config && Array.isArray(fresh.items)) {
+          setData(fresh);
+        }
+      })
+      .catch(() => {
+        // Keep bundled initialData if dev server endpoint is unavailable
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const persistToProject = useCallback(async (nextData: WishlistData) => {
+    if (!IS_EDITABLE) return;
+    setIsSaving(true);
     try {
-      if (hasUnsavedChanges) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
+      const response = await fetch('/__api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nextData),
+      });
+      if (!response.ok) {
+        setToastMessage('Erro ao gravar alterações em wishlist.json.');
       }
     } catch {
-      // Ignore storage quota errors cleanly
+      setToastMessage('Não foi possível salvar no arquivo do projeto.');
+    } finally {
+      setIsSaving(false);
     }
-  }, [data, hasUnsavedChanges]);
+  }, []);
+
+  const applyAndSave = useCallback(
+    (updater: (prev: WishlistData) => WishlistData) => {
+      setData((prev) => {
+        const next = updater(prev);
+        void persistToProject(next);
+        return next;
+      });
+    },
+    [persistToProject],
+  );
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -68,28 +86,28 @@ export default function App() {
   }, [isDrawerOpen]);
 
   const handleAddItem = (newItem: GiftItem) => {
-    setData((prev) => ({
+    applyAndSave((prev) => ({
       ...prev,
       items: [newItem, ...prev.items],
     }));
   };
 
   const handleUpdateItem = (updatedItem: GiftItem) => {
-    setData((prev) => ({
+    applyAndSave((prev) => ({
       ...prev,
       items: prev.items.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
     }));
   };
 
   const handleDeleteItem = (id: string) => {
-    setData((prev) => ({
+    applyAndSave((prev) => ({
       ...prev,
       items: prev.items.filter((item) => item.id !== id),
     }));
   };
 
   const handleMoveItem = (index: number, direction: -1 | 1) => {
-    setData((prev) => {
+    applyAndSave((prev) => {
       const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= prev.items.length) return prev;
       const nextItems = [...prev.items];
@@ -103,39 +121,21 @@ export default function App() {
   };
 
   const handleUpdateConfig = (nextConfig: WishlistConfig) => {
-    setData((prev) => ({
+    applyAndSave((prev) => ({
       ...prev,
       config: nextConfig,
     }));
   };
 
-  const handleResetToPublished = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setData(publishedData);
-  };
-
   const handleImportData = (imported: WishlistData) => {
-    setData(imported);
-  };
-
-  const handleQuickDownloadJson = () => {
-    const serialized = JSON.stringify(data, null, 2) + '\n';
-    const blob = new Blob([serialized], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'wishlist.json';
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
-    setToastMessage('Arquivo wishlist.json baixado para envio ao GitHub.');
+    applyAndSave(() => imported);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink">
       <Navbar
         brandTitle={data.config.brandTitle}
+        isEditable={IS_EDITABLE}
         onOpenManage={() => setIsDrawerOpen(true)}
       />
 
@@ -156,26 +156,18 @@ export default function App() {
               </h2>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              {hasUnsavedChanges && (
+            {IS_EDITABLE && (
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={handleQuickDownloadJson}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-forest bg-surface border border-forest/30 hover:bg-surface-muted rounded-md transition-colors cursor-pointer whitespace-nowrap"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Exportar alterações (JSON)</span>
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Adicionar produto</span>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Adicionar produto</span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
           {data.items.length === 0 ? (
@@ -184,16 +176,20 @@ export default function App() {
                 Nenhuma sugestão cadastrada ainda
               </p>
               <p className="text-sm text-ink-muted max-w-md mx-auto mb-6">
-                Adicione produtos com foto e link da loja para que seu amigo secreto possa escolher com facilidade.
+                {IS_EDITABLE
+                  ? 'Adicione produtos com foto e link da loja para que seu amigo secreto possa escolher com facilidade.'
+                  : 'Em breve novas sugestões de presente aparecerão por aqui.'}
               </p>
-              <button
-                type="button"
-                onClick={() => setIsDrawerOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-forest hover:bg-forest-hover rounded-md transition-colors cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Adicionar primeira sugestão</span>
-              </button>
+              {IS_EDITABLE && (
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-forest hover:bg-forest-hover rounded-md transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar primeira sugestão</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 md:gap-8">
@@ -216,33 +212,36 @@ export default function App() {
             <a href="#topo" className="hover:text-ink transition-colors">
               Voltar ao topo
             </a>
-            <button
-              type="button"
-              onClick={() => setIsDrawerOpen(true)}
-              className="hover:text-ink transition-colors cursor-pointer"
-            >
-              Editar ou exportar lista
-            </button>
+            {IS_EDITABLE && (
+              <button
+                type="button"
+                onClick={() => setIsDrawerOpen(true)}
+                className="hover:text-ink transition-colors cursor-pointer"
+              >
+                Gerenciar lista
+              </button>
+            )}
           </div>
         </div>
       </footer>
 
-      <ManageDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        data={data}
-        hasUnsavedChanges={hasUnsavedChanges}
-        onAddItem={handleAddItem}
-        onUpdateItem={handleUpdateItem}
-        onDeleteItem={handleDeleteItem}
-        onMoveItem={handleMoveItem}
-        onUpdateConfig={handleUpdateConfig}
-        onResetToPublished={handleResetToPublished}
-        onImportData={handleImportData}
-        onNotify={(msg) => setToastMessage(msg)}
-      />
+      {IS_EDITABLE && (
+        <ManageDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          data={data}
+          isSaving={isSaving}
+          onAddItem={handleAddItem}
+          onUpdateItem={handleUpdateItem}
+          onDeleteItem={handleDeleteItem}
+          onMoveItem={handleMoveItem}
+          onUpdateConfig={handleUpdateConfig}
+          onImportData={handleImportData}
+          onNotify={(msg) => setToastMessage(msg)}
+        />
+      )}
 
-      {toastMessage && (
+      {IS_EDITABLE && toastMessage && (
         <div
           role="status"
           aria-live="polite"

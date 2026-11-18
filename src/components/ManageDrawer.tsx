@@ -9,7 +9,6 @@ import {
   Download,
   Copy,
   Check,
-  RotateCcw,
   Upload,
   ExternalLink,
 } from 'lucide-react';
@@ -20,13 +19,12 @@ interface ManageDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   data: WishlistData;
-  hasUnsavedChanges: boolean;
+  isSaving: boolean;
   onAddItem: (item: GiftItem) => void;
   onUpdateItem: (item: GiftItem) => void;
   onDeleteItem: (id: string) => void;
   onMoveItem: (index: number, direction: -1 | 1) => void;
   onUpdateConfig: (config: WishlistConfig) => void;
-  onResetToPublished: () => void;
   onImportData: (data: WishlistData) => void;
   onNotify: (message: string) => void;
 }
@@ -56,13 +54,12 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
   isOpen,
   onClose,
   data,
-  hasUnsavedChanges,
+  isSaving,
   onAddItem,
   onUpdateItem,
   onDeleteItem,
   onMoveItem,
   onUpdateConfig,
-  onResetToPublished,
   onImportData,
   onNotify,
 }) => {
@@ -171,10 +168,10 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
 
     if (editingId) {
       onUpdateItem(nextItem);
-      onNotify('Sugestão atualizada na vitrine.');
+      onNotify('Sugestão atualizada e salva no projeto.');
     } else {
       onAddItem(nextItem);
-      onNotify('Nova sugestão adicionada à vitrine.');
+      onNotify('Sugestão adicionada e salva no projeto.');
     }
 
     resetProductForm();
@@ -193,7 +190,7 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
       greetingMessage: configDraft.greetingMessage.trim(),
       heroImageUrl: configDraft.heroImageUrl.trim(),
     });
-    onNotify('Texto de apresentação atualizado.');
+    onNotify('Apresentação salva no projeto.');
   };
 
   const serializedJson = JSON.stringify(data, null, 2);
@@ -208,7 +205,7 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
-    onNotify('Arquivo wishlist.json baixado.');
+    onNotify('Backup wishlist.json baixado.');
   };
 
   const handleCopyJson = async () => {
@@ -234,7 +231,7 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
           return;
         }
         onImportData(parsed);
-        onNotify('Lista importada com sucesso.');
+        onNotify('Lista importada e salva no projeto.');
       } catch {
         onNotify('Erro ao ler o arquivo JSON.');
       }
@@ -263,9 +260,9 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
               Gerenciar Lista
             </h2>
             <p className="text-xs text-ink-muted mt-0.5">
-              {hasUnsavedChanges
-                ? 'Rascunho local ativo · Exporte para atualizar o GitHub'
-                : 'Sincronizado com o catálogo publicado'}
+              {isSaving
+                ? 'Salvando alterações no projeto...'
+                : 'Tudo que você salvar aqui vai junto no próximo commit'}
             </p>
           </div>
           <button
@@ -311,7 +308,7 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
                   : 'text-ink-muted hover:text-ink'
               }`}
             >
-              Publicar GitHub
+              GitHub & Vercel
             </button>
           </div>
         </div>
@@ -665,51 +662,49 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-semibold text-ink mb-2">
-                  Sincronizar com GitHub e Vercel
+                  Pronto para Commit no GitHub & Deploy na Vercel
                 </h3>
                 <p className="text-xs text-ink-muted leading-relaxed">
-                  Como sua vitrine roda de forma estática na Vercel, todas as edições feitas aqui ficam salvas como rascunho neste navegador. Para que seu amigo secreto veja as novidades pelo link público:
+                  Todos os produtos e textos cadastrados aqui são salvos diretamente no arquivo{' '}
+                  <code className="px-1.5 py-0.5 bg-surface-muted rounded text-[11px]">
+                    src/data/wishlist.json
+                  </code>{' '}
+                  deste projeto.
                 </p>
               </div>
 
               <ol className="space-y-3 text-xs text-ink leading-relaxed border-t border-b border-border-hairline py-4">
                 <li>
-                  <strong>1. Exporte a lista atualizada</strong> clicando em &ldquo;Baixar wishlist.json&rdquo; ou &ldquo;Copiar JSON&rdquo;.
+                  <strong>1. Cadastre e organize por aqui</strong> — cada item adicionado ou editado já é gravado automaticamente nos arquivos do projeto.
                 </li>
                 <li>
-                  <strong>2. Substitua no repositório GitHub</strong> o arquivo{' '}
-                  <code className="px-1.5 py-0.5 bg-surface-muted rounded text-[11px]">
-                    src/data/wishlist.json
-                  </code>{' '}
-                  pelo arquivo exportado.
+                  <strong>2. Faça o commit e push para o GitHub</strong> — seus itens e alterações vão junto no mesmo commit.
                 </li>
                 <li>
-                  <strong>3. Faça o commit na branch principal</strong> — a Vercel detecta a atualização e publica a nova vitrine automaticamente.
+                  <strong>3. Acesse pela Vercel</strong> — no site publicado, os botões de edição ficam ocultos automaticamente, exibindo apenas a vitrine limpa para seu amigo secreto.
                 </li>
               </ol>
 
-              <div className="space-y-3">
+              <div className="pt-2 space-y-3">
+                <h4 className="text-xs font-semibold text-ink">Backup opcional (JSON)</h4>
+
                 <button
                   type="button"
                   onClick={handleDownloadJson}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-forest hover:bg-forest-hover rounded-md transition-colors cursor-pointer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Baixar wishlist.json</span>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar cópia de backup (wishlist.json)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleCopyJson}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
                 >
-                  {copiedJson ? <Check className="w-4 h-4 text-forest" /> : <Copy className="w-4 h-4" />}
+                  {copiedJson ? <Check className="w-3.5 h-3.5 text-forest" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedJson ? 'JSON copiado' : 'Copiar conteúdo JSON'}</span>
                 </button>
-              </div>
-
-              <div className="pt-4 border-t border-border-hairline space-y-3">
-                <h4 className="text-xs font-semibold text-ink">Outras ações</h4>
 
                 <label className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-ink bg-surface border border-border-hairline hover:bg-surface-muted rounded-md transition-colors cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
@@ -721,20 +716,6 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
                     className="hidden"
                   />
                 </label>
-
-                {hasUnsavedChanges && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onResetToPublished();
-                      onNotify('Rascunho descartado. Lista restaurada para a versão publicada.');
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-red-700 bg-surface border border-red-200 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Descartar rascunho local e restaurar padrão</span>
-                  </button>
-                )}
               </div>
             </div>
           )}
