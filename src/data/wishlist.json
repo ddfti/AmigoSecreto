@@ -62,12 +62,13 @@
     },
     {
       "id": "gift-book-03",
-      "title": "Livros",
+      "title": "Livro ",
       "storeName": "Amazon livros",
-      "category": "Livro",
-"productUrl": "https://www.amazon.com.br/Livro-Enoque-John-Carth/dp/6599231985/ref=mp_s_a_1_1?adgrpid=81561992335&dib=eyJ2IjoiMSJ9.hOpqdGYxKNZR_tPEyUHyI3_w1tSII0v9bSU8jyR9SK1PmOcLy0dV6jw7Ngn4026yFXxtM4vILBcra3JuaMCPEOiY3nP6l0CCGzvpWjFflhjxihkMOpA_u7a8PCbbaKJqhCVeVIRfQ0kxfcezyK-qcAoMBay8kKZxKkY3HBc0HGzKqY4j25q74ejiYZ5CoHzm155t9p-0t3Itqt2e4VlAMw.C1kESCEmsFsQPoJ4ci144kxpnMVlk1ff24ydltmd7TY&dib_tag=se&hvadid=595792387854&hvcampaign=7654812142&hvdev=m&hvexpln=0&hvlocphy=9102453&hvnetw=g&hvocijid=4729305165824838961--&hvqmt=e&hvrand=4729305165824838961&hvtargid=kwd-2425350662553&hydadcr=17013_13445081&keywords=livro+de+enoque+valor&mcid=dededbb9e840389db122d4b487298e82&qid=1795020773&refinements=p_72%3A17833786011%2Cp_85%3A19171728011%2Cp_n_feature_nine_browse-bin%3A9754444011&rnid=8529757011&rps=1&sr=8-1",
+      "category": "Livros",
+      "productUrl": "https://www.amazon.com.br/Livro-Enoque-John-Carth/dp/6599231985/ref=mp_s_a_1_1?adgrpid=81561992335&dib=eyJ2IjoiMSJ9.hOpqdGYxKNZR_tPEyUHyI3_w1tSII0v9bSU8jyR9SK1PmOcLy0dV6jw7Ngn4026yFXxtM4vILBcra3JuaMCPEOiY3nP6l0CCGzvpWjFflhjxihkMOpA_u7a8PCbbaKJqhCVeVIRfQ0kxfcezyK-qcAoMBay8kKZxKkY3HBc0HGzKqY4j25q74ejiYZ5CoHzm155t9p-0t3Itqt2e4VlAMw.C1kESCEmsFsQPoJ4ci144kxpnMVlk1ff24ydltmd7TY&dib_tag=se&hvadid=595792387854&hvcampaign=7654812142&hvdev=m&hvexpln=0&hvlocphy=9102453&hvnetw=g&hvocijid=4729305165824838961--&hvqmt=e&hvrand=4729305165824838961&hvtargid=kwd-2425350662553&hydadcr=17013_13445081&keywords=livro+de+enoque+valor&mcid=dededbb9e840389db122d4b487298e82&qid=1795020773&refinements=p_72%3A17833786011%2Cp_85%3A19171728011%2Cp_n_feature_nine_browse-bin%3A9754444011&rnid=8529757011&rps=1&sr=8-1",
       "imageUrl": "/src/assets/images/gift_design_book_1794964313735.jpg",
       "price": 49.01,
       "note": "Edição para mesa de centro ou estante."
     }
   ]
+}
