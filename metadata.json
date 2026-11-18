@@ -1,0 +1,6 @@
+{
+  "name": "Lista de Desejos — Amigo Secreto",
+  "description": "Vitrine editorial minimalista para compartilhar sugestões de presente de amigo secreto com redirecionamento direto para a loja e exportação para GitHub e Vercel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,42 @@
+{
+  "config": {
+    "brandTitle": "Curadoria de Presentes",
+    "recipientName": "Tiago",
+    "occasionLabel": "Amigo Secreto 2026",
+    "greetingTitle": "Se você me tirou, preparei algumas ideias para facilitar sua escolha.",
+    "greetingMessage": "Reuni aqui sugestões reais de itens que eu adoraria ganhar. Basta clicar em qualquer imagem abaixo para abrir o link direto da loja em uma nova aba e concluir a compra com tranquilidade.",
+    "heroImageUrl": "/src/assets/images/hero_editorial_gifts_1794964312420.jpg"
+  },
+  "items": [
+    {
+      "id": "gift-kettle-01",
+      "title": "Chaleira Bico de Ganso Preto Fosco",
+      "storeName": "Amazon Brasil",
+      "category": "Café & Casa",
+      "productUrl": "https://www.amazon.com.br/s?k=chaleira+bico+de+ganso+preto+fosco",
+      "imageUrl": "/src/assets/images/gift_coffee_kettle_1794964312178.jpg",
+      "price": 249.9,
+      "note": "Capacidade 600ml, acabamento fosco com cabo de madeira."
+    },
+    {
+      "id": "gift-headphones-02",
+      "title": "Fone Over-Ear Sem Fio Minimalista",
+      "storeName": "Mercado Livre",
+      "category": "Áudio",
+      "productUrl": "https://lista.mercadolivre.com.br/fone-bluetooth-over-ear",
+      "imageUrl": "/src/assets/images/gift_wireless_headphones_1794964313214.jpg",
+      "price": 389.0,
+      "note": "Preferência por tons claros, areia ou alumínio escovado."
+    },
+    {
+      "id": "gift-book-03",
+      "title": "Livro de Arquitetura & Design Contemporâneo",
+      "storeName": "Livraria da Vila",
+      "category": "Livros",
+      "productUrl": "https://www.livrariadavila.com.br/",
+      "imageUrl": "/src/assets/images/gift_design_book_1794964313735.jpg",
+      "price": 175.0,
+      "note": "Edição capa dura para mesa de centro ou estante."
+    }
+  ]
+}
