@@ -20,12 +20,13 @@ interface ManageDrawerProps {
   onClose: () => void;
   data: WishlistData;
   isSaving: boolean;
-  onAddItem: (item: GiftItem) => void;
-  onUpdateItem: (item: GiftItem) => void;
-  onDeleteItem: (id: string) => void;
-  onMoveItem: (index: number, direction: -1 | 1) => void;
-  onUpdateConfig: (config: WishlistConfig) => void;
-  onImportData: (data: WishlistData) => void;
+  lastSavedAt: string | null;
+  onAddItem: (item: GiftItem) => Promise<boolean>;
+  onUpdateItem: (item: GiftItem) => Promise<boolean>;
+  onDeleteItem: (id: string) => Promise<boolean>;
+  onMoveItem: (index: number, direction: -1 | 1) => Promise<boolean>;
+  onUpdateConfig: (config: WishlistConfig) => Promise<boolean>;
+  onImportData: (data: WishlistData) => Promise<boolean>;
   onNotify: (message: string) => void;
 }
 
@@ -50,11 +51,22 @@ const STUDIO_IMAGE_PRESETS = [
   },
 ];
 
+function parseBrazilianPrice(raw: string): number | null {
+  const cleaned = raw.replace(/R\$/gi, '').replace(/\s+/g, '').trim();
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned;
+  const num = Number(normalized);
+  return Number.isFinite(num) ? num : Number.NaN;
+}
+
 export const ManageDrawer: React.FC<ManageDrawerProps> = ({
   isOpen,
   onClose,
   data,
   isSaving,
+  lastSavedAt,
   onAddItem,
   onUpdateItem,
   onDeleteItem,
@@ -129,7 +141,7 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
     setActiveTab('products');
   };
 
-  const handleProductSubmit = (e: React.FormEvent) => {
+  const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -146,12 +158,10 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
       return;
     }
 
-    const parsedPrice = priceInput.trim()
-      ? Number(priceInput.replace(',', '.'))
-      : null;
+    const parsedPrice = parseBrazilianPrice(priceInput);
 
-    if (priceInput.trim() && (Number.isNaN(parsedPrice) || (parsedPrice ?? 0) < 0)) {
-      setFormError('Informe um valor numérico válido para o preço.');
+    if (priceInput.trim() && (parsedPrice === null || Number.isNaN(parsedPrice) || parsedPrice < 0)) {
+      setFormError('Informe um valor numérico válido para o preço (ex: 199,90).');
       return;
     }
 
@@ -166,20 +176,25 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
       note: note.trim(),
     };
 
-    if (editingId) {
-      onUpdateItem(nextItem);
-      onNotify('Sugestão atualizada e salva no projeto.');
-    } else {
-      onAddItem(nextItem);
-      onNotify('Sugestão adicionada e salva no projeto.');
-    }
+    const ok = editingId
+      ? await onUpdateItem(nextItem)
+      : await onAddItem(nextItem);
 
-    resetProductForm();
+    if (ok) {
+      onNotify(
+        editingId
+          ? 'Sugestão atualizada e salva em wishlist.json.'
+          : 'Sugestão adicionada e salva em wishlist.json.',
+      );
+      resetProductForm();
+    } else {
+      setFormError('Não foi possível salvar no arquivo do projeto. Recarregue a página e tente novamente.');
+    }
   };
 
-  const handleConfigSubmit = (e: React.FormEvent) => {
+  const handleConfigSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateConfig({
+    const ok = await onUpdateConfig({
       ...configDraft,
       brandTitle: configDraft.brandTitle.trim() || 'Curadoria de Presentes',
       recipientName: configDraft.recipientName.trim() || 'Amigo Secreto',
@@ -190,7 +205,9 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
       greetingMessage: configDraft.greetingMessage.trim(),
       heroImageUrl: configDraft.heroImageUrl.trim(),
     });
-    onNotify('Apresentação salva no projeto.');
+    if (ok) {
+      onNotify('Apresentação salva em wishlist.json.');
+    }
   };
 
   const serializedJson = JSON.stringify(data, null, 2);
@@ -223,15 +240,17 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const parsed = JSON.parse(String(reader.result)) as WishlistData;
         if (!parsed || !parsed.config || !Array.isArray(parsed.items)) {
           onNotify('Arquivo inválido: estrutura de wishlist.json não reconhecida.');
           return;
         }
-        onImportData(parsed);
-        onNotify('Lista importada e salva no projeto.');
+        const ok = await onImportData(parsed);
+        if (ok) {
+          onNotify('Lista importada e salva em wishlist.json.');
+        }
       } catch {
         onNotify('Erro ao ler o arquivo JSON.');
       }
@@ -261,8 +280,10 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
             </h2>
             <p className="text-xs text-ink-muted mt-0.5">
               {isSaving
-                ? 'Salvando alterações no projeto...'
-                : 'Tudo que você salvar aqui vai junto no próximo commit'}
+                ? 'Salvando alterações em wishlist.json...'
+                : lastSavedAt
+                  ? `Salvo em src/data/wishlist.json às ${lastSavedAt}`
+                  : 'Tudo que você salvar aqui vai junto no próximo commit'}
             </p>
           </div>
           <button
@@ -544,10 +565,10 @@ export const ManageDrawer: React.FC<ManageDrawerProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              onDeleteItem(item.id);
+                            onClick={async () => {
+                              const ok = await onDeleteItem(item.id);
                               if (editingId === item.id) resetProductForm();
-                              onNotify('Sugestão removida.');
+                              if (ok) onNotify('Sugestão removida e salva em wishlist.json.');
                             }}
                             title="Remover produto"
                             aria-label={`Remover ${item.title}`}

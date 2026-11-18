@@ -32,12 +32,13 @@ export default defineConfig(() => {
         apply: 'serve',
         configureServer(server) {
           const wishlistPath = path.resolve(__dirname, 'src/data/wishlist.json');
-          server.middlewares.use('/__api/wishlist', (req, res) => {
+          server.middlewares.use('/api/wishlist', (req, res) => {
             if (req.method === 'GET') {
               try {
                 const raw = fs.readFileSync(wishlistPath, 'utf-8');
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-store');
                 res.end(raw);
               } catch {
                 res.statusCode = 500;
@@ -66,6 +67,7 @@ export default defineConfig(() => {
                   );
                   res.statusCode = 200;
                   res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                  res.setHeader('Cache-Control', 'no-store');
                   res.end(JSON.stringify({ok: true}));
                 } catch {
                   res.statusCode = 500;

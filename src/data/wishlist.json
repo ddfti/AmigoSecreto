@@ -25,7 +25,17 @@
       "category": "Áudio",
       "productUrl": "https://lista.mercadolivre.com.br/fone-bluetooth-over-ear",
       "imageUrl": "/src/assets/images/gift_wireless_headphones_1794964313214.jpg",
-      "price": 389.0,
+      "price": 389,
+      "note": "Preferência por tons claros, areia ou alumínio escovado."
+    },
+    {
+      "id": "gift-item-04",
+      "title": "Fone Over-Ear Sem Fio Minimalista",
+      "storeName": "Mercado Livre",
+      "category": "Áudio",
+      "productUrl": "https://lista.mercadolivre.com.br/fone-bluetooth-over-ear",
+      "imageUrl": "/src/assets/images/gift_wireless_headphones_1794964313214.jpg",
+      "price": 29.9,
       "note": "Preferência por tons claros, areia ou alumínio escovado."
     },
     {
@@ -35,7 +45,7 @@
       "category": "Livros",
       "productUrl": "https://www.livrariadavila.com.br/",
       "imageUrl": "/src/assets/images/gift_design_book_1794964313735.jpg",
-      "price": 175.0,
+      "price": 175,
       "note": "Edição capa dura para mesa de centro ou estante."
     }
   ]

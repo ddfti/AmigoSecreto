@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import publishedWishlistRaw from './data/wishlist.json';
 import type { GiftItem, WishlistConfig, WishlistData } from './types/wishlist';
@@ -18,17 +18,24 @@ const initialData: WishlistData = publishedWishlistRaw as WishlistData;
 
 export default function App() {
   const [data, setData] = useState<WishlistData>(initialData);
+  const dataRef = useRef<WishlistData>(initialData);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   useEffect(() => {
     if (!IS_EDITABLE) return;
     let active = true;
-    fetch('/__api/wishlist', { cache: 'no-store' })
+    fetch('/api/wishlist', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
       .then((fresh: WishlistData | null) => {
         if (active && fresh && fresh.config && Array.isArray(fresh.items)) {
+          dataRef.current = fresh;
           setData(fresh);
         }
       })
@@ -40,32 +47,40 @@ export default function App() {
     };
   }, []);
 
-  const persistToProject = useCallback(async (nextData: WishlistData) => {
-    if (!IS_EDITABLE) return;
+  const persistToProject = useCallback(async (nextData: WishlistData): Promise<boolean> => {
+    if (!IS_EDITABLE) return false;
     setIsSaving(true);
     try {
-      const response = await fetch('/__api/wishlist', {
+      const response = await fetch('/api/wishlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nextData),
       });
       if (!response.ok) {
         setToastMessage('Erro ao gravar alterações em wishlist.json.');
+        return false;
       }
+      const nowLabel = new Date().toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setLastSavedAt(nowLabel);
+      return true;
     } catch {
       setToastMessage('Não foi possível salvar no arquivo do projeto.');
+      return false;
     } finally {
       setIsSaving(false);
     }
   }, []);
 
   const applyAndSave = useCallback(
-    (updater: (prev: WishlistData) => WishlistData) => {
-      setData((prev) => {
-        const next = updater(prev);
-        void persistToProject(next);
-        return next;
-      });
+    async (updater: (prev: WishlistData) => WishlistData): Promise<boolean> => {
+      const next = updater(dataRef.current);
+      dataRef.current = next;
+      setData(next);
+      return persistToProject(next);
     },
     [persistToProject],
   );
@@ -85,29 +100,29 @@ export default function App() {
     };
   }, [isDrawerOpen]);
 
-  const handleAddItem = (newItem: GiftItem) => {
-    applyAndSave((prev) => ({
+  const handleAddItem = async (newItem: GiftItem): Promise<boolean> => {
+    return applyAndSave((prev) => ({
       ...prev,
       items: [newItem, ...prev.items],
     }));
   };
 
-  const handleUpdateItem = (updatedItem: GiftItem) => {
-    applyAndSave((prev) => ({
+  const handleUpdateItem = async (updatedItem: GiftItem): Promise<boolean> => {
+    return applyAndSave((prev) => ({
       ...prev,
       items: prev.items.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
     }));
   };
 
-  const handleDeleteItem = (id: string) => {
-    applyAndSave((prev) => ({
+  const handleDeleteItem = async (id: string): Promise<boolean> => {
+    return applyAndSave((prev) => ({
       ...prev,
       items: prev.items.filter((item) => item.id !== id),
     }));
   };
 
-  const handleMoveItem = (index: number, direction: -1 | 1) => {
-    applyAndSave((prev) => {
+  const handleMoveItem = async (index: number, direction: -1 | 1): Promise<boolean> => {
+    return applyAndSave((prev) => {
       const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= prev.items.length) return prev;
       const nextItems = [...prev.items];
@@ -120,15 +135,15 @@ export default function App() {
     });
   };
 
-  const handleUpdateConfig = (nextConfig: WishlistConfig) => {
-    applyAndSave((prev) => ({
+  const handleUpdateConfig = async (nextConfig: WishlistConfig): Promise<boolean> => {
+    return applyAndSave((prev) => ({
       ...prev,
       config: nextConfig,
     }));
   };
 
-  const handleImportData = (imported: WishlistData) => {
-    applyAndSave(() => imported);
+  const handleImportData = async (imported: WishlistData): Promise<boolean> => {
+    return applyAndSave(() => imported);
   };
 
   return (
@@ -231,6 +246,7 @@ export default function App() {
           onClose={() => setIsDrawerOpen(false)}
           data={data}
           isSaving={isSaving}
+          lastSavedAt={lastSavedAt}
           onAddItem={handleAddItem}
           onUpdateItem={handleUpdateItem}
           onDeleteItem={handleDeleteItem}
